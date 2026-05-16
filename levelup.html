@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Level Up</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f9f7f4;
+  --surface: #ffffff;
+  --surface2: #f2f0ed;
+  --border: #e5e2dd;
+  --text: #1a1917;
+  --muted: #8a8680;
+  --accent: #1a1917;
+  --green: #2d6a4f;
+  --green-bg: #eaf3ee;
+  --amber: #92400e;
+  --amber-bg: #fef3c7;
+  --blue: #1e3a5f;
+  --blue-bg: #eff6ff;
+  --red: #991b1b;
+  --mono: 'DM Mono', monospace;
+  --serif: 'Instrument Serif', serif;
+  --sans: 'Geist', sans-serif;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; }
+
+/* AUTH */
+#auth-screen {
+  position: fixed; inset: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg);
+}
+.auth-wrap { width: 100%; max-width: 360px; padding: 2rem; }
+.auth-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 1rem; }
+.auth-title { font-family: var(--serif); font-size: 36px; line-height: 1.1; margin-bottom: 0.5rem; }
+.auth-title em { font-style: italic; }
+.auth-sub { font-size: 14px; color: var(--muted); margin-bottom: 2rem; }
+.auth-input {
+  width: 100%; border: 1.5px solid var(--border); border-radius: 8px;
+  padding: 12px 14px; font-family: var(--mono); font-size: 14px;
+  background: var(--surface); color: var(--text); outline: none;
+  letter-spacing: 3px; margin-bottom: 10px; transition: border 0.2s;
+}
+.auth-input:focus { border-color: var(--text); }
+.auth-input::placeholder { letter-spacing: 1px; color: var(--muted); }
+.auth-btn {
+  width: 100%; background: var(--text); color: #fff; border: none;
+  border-radius: 8px; padding: 13px; font-family: var(--sans); font-weight: 600;
+  font-size: 14px; cursor: pointer; transition: opacity 0.2s;
+}
+.auth-btn:hover { opacity: 0.85; }
+.auth-err { font-family: var(--mono); font-size: 11px; color: var(--red); min-height: 16px; margin-bottom: 8px; }
+.auth-hint { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 12px; line-height: 1.7; }
+
+/* LAYOUT */
+#app { display: none; min-height: 100vh; }
+.nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 1.5rem; height: 56px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface); position: sticky; top: 0; z-index: 100;
+}
+.nav-logo { font-family: var(--serif); font-size: 20px; }
+.nav-logo em { font-style: italic; }
+.nav-tabs { display: flex; gap: 2px; }
+.nav-tab {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 1px;
+  padding: 6px 12px; border-radius: 6px; border: none; background: none;
+  color: var(--muted); cursor: pointer; transition: all 0.15s;
+}
+.nav-tab:hover, .nav-tab.active { background: var(--surface2); color: var(--text); }
+.nav-right { display: flex; align-items: center; gap: 10px; }
+.lock-btn {
+  font-family: var(--mono); font-size: 10px; color: var(--muted);
+  border: 1px solid var(--border); border-radius: 5px; padding: 4px 10px;
+  background: none; cursor: pointer; transition: all 0.15s;
+}
+.lock-btn:hover { border-color: var(--text); color: var(--text); }
+
+/* MOBILE NAV */
+.mobile-nav {
+  display: none; position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--surface); border-top: 1px solid var(--border);
+  padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+  z-index: 100;
+}
+.mobile-tabs { display: flex; justify-content: space-around; }
+.mobile-tab {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.5px;
+  color: var(--muted); cursor: pointer; padding: 4px 12px;
+  border: none; background: none; transition: color 0.15s;
+}
+.mobile-tab.active { color: var(--text); }
+.mobile-tab-icon { font-size: 18px; }
+
+@media (max-width: 640px) {
+  .nav-tabs { display: none; }
+  .mobile-nav { display: block; }
+  #app { padding-bottom: 70px; }
+}
+
+/* PAGES */
+.page { display: none; padding: 1.5rem; max-width: 900px; margin: 0 auto; }
+.page.active { display: block; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.page.active { animation: fadeUp 0.25s ease; }
+
+/* CARDS */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; }
+.card-label { font-family: var(--mono); font-size: 10px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 0.75rem; }
+
+/* DASHBOARD */
+.dash-top { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+.dash-bottom { display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; }
+@media (max-width: 640px) { .dash-top, .dash-bottom { grid-template-columns: 1fr; } }
+
+.stat-big { font-family: var(--serif); font-size: 48px; line-height: 1; margin-bottom: 4px; }
+.stat-big em { font-style: italic; }
+.stat-sub { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+.xp-bar-wrap { background: var(--surface2); border-radius: 100px; height: 5px; margin: 10px 0 6px; overflow: hidden; }
+.xp-bar { height: 100%; border-radius: 100px; background: var(--text); transition: width 0.6s ease; }
+.xp-label { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10px; color: var(--muted); }
+
+.rank-name { font-family: var(--serif); font-size: 28px; }
+.rank-name em { font-style: italic; }
+.rank-title { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 1px; margin-top: 2px; }
+
+.skill-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.skill-icon { font-size: 16px; width: 20px; text-align: center; }
+.skill-name { font-size: 13px; width: 80px; }
+.skill-bar-wrap { flex: 1; background: var(--surface2); border-radius: 100px; height: 4px; overflow: hidden; }
+.skill-bar { height: 100%; border-radius: 100px; background: var(--text); transition: width 0.6s; }
+.skill-lv { font-family: var(--mono); font-size: 10px; color: var(--muted); width: 30px; text-align: right; }
+
+.mission-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.mission-item:last-child { border-bottom: none; }
+.mission-check { width: 18px; height: 18px; border: 1.5px solid var(--border); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
+.mission-check.done { background: var(--text); border-color: var(--text); color: #fff; }
+
+.focus-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.focus-pill {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 1px;
+  padding: 5px 12px; border-radius: 100px; border: 1.5px solid var(--border);
+  cursor: pointer; background: none; color: var(--muted); transition: all 0.15s;
+}
+.focus-pill.active { border-color: var(--text); color: var(--text); background: var(--surface2); }
+
+/* SCHEDULE */
+.schedule-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+@media (max-width: 640px) { .schedule-grid { grid-template-columns: 1fr; } }
+.schedule-label { font-family: var(--mono); font-size: 10px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 1rem; }
+.time-block { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); align-items: flex-start; }
+.time-block:last-child { border-bottom: none; }
+.time-block-time { font-family: var(--mono); font-size: 10px; color: var(--muted); min-width: 72px; padding-top: 2px; }
+.time-block-body {}
+.time-block-name { font-size: 13px; font-weight: 500; }
+.time-block-note { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* WORKOUT */
+.workout-section { margin-top: 1.5rem; }
+.workout-day { margin-bottom: 1.5rem; }
+.workout-day-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 0.75rem; }
+.workout-day-name { font-weight: 600; font-size: 15px; }
+.workout-day-focus { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+.phase-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: 10px; padding: 1rem; margin-bottom: 8px; }
+.phase-card.locked { opacity: 0.4; }
+.phase-card.current { border-color: var(--text); }
+.phase-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.phase-name { font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: 1px; }
+.phase-badge {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 1px; padding: 2px 8px;
+  border-radius: 100px; text-transform: uppercase;
+}
+.phase-badge.current { background: var(--text); color: #fff; }
+.phase-badge.locked { background: var(--surface2); color: var(--muted); }
+.phase-badge.done { background: var(--green-bg); color: var(--green); }
+.phase-unlock { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-bottom: 8px; }
+.exercise-list { list-style: none; }
+.exercise-list li { font-size: 13px; padding: 4px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+.exercise-list li:last-child { border-bottom: none; }
+.ex-name { color: var(--text); }
+.ex-sets { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+/* DAILY LOG */
+.log-section { margin-bottom: 1.25rem; }
+.log-section-title { font-weight: 600; font-size: 14px; margin-bottom: 10px; }
+.check-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+@media (min-width: 500px) { .check-grid { grid-template-columns: repeat(3, 1fr); } }
+.check-label {
+  display: flex; align-items: center; gap: 8px; padding: 9px 12px;
+  border: 1.5px solid var(--border); border-radius: 8px; cursor: pointer;
+  font-size: 13px; transition: all 0.15s; user-select: none;
+}
+.check-label input { display: none; }
+.check-label:has(input:checked) { border-color: var(--text); background: var(--surface2); }
+.check-box { width: 16px; height: 16px; border: 1.5px solid var(--border); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; transition: all 0.15s; }
+.check-label:has(input:checked) .check-box { background: var(--text); border-color: var(--text); color: #fff; }
+
+.form-field { margin-bottom: 12px; }
+.form-label { font-family: var(--mono); font-size: 10px; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 6px; }
+.form-input, .form-select, .form-textarea {
+  width: 100%; border: 1.5px solid var(--border); border-radius: 8px;
+  padding: 10px 12px; font-family: var(--sans); font-size: 13px;
+  background: var(--surface); color: var(--text); outline: none; transition: border 0.15s;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--text); }
+.form-textarea { resize: vertical; min-height: 72px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 400px) { .form-grid { grid-template-columns: 1fr; } }
+
+.workout-log-fields { background: var(--surface2); border-radius: 10px; padding: 1rem; margin-bottom: 12px; }
+
+/* Reps input group */
+.reps-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.reps-item label { font-family: var(--mono); font-size: 10px; color: var(--muted); display: block; margin-bottom: 4px; }
+.reps-input { width: 100%; border: 1.5px solid var(--border); border-radius: 6px; padding: 8px 10px; font-family: var(--mono); font-size: 13px; background: var(--surface); color: var(--text); outline: none; text-align: center; }
+
+.submit-btn {
+  width: 100%; background: var(--text); color: #fff; border: none;
+  border-radius: 10px; padding: 14px; font-family: var(--sans); font-weight: 600;
+  font-size: 15px; cursor: pointer; transition: opacity 0.2s; margin-top: 0.5rem;
+}
+.submit-btn:hover { opacity: 0.85; }
+
+.success-banner {
+  display: none; background: var(--green-bg); border: 1px solid #a7c9b5;
+  border-radius: 10px; padding: 1rem; margin-bottom: 1rem;
+  font-size: 14px; color: var(--green);
+}
+.level-up-banner {
+  display: none; background: var(--amber-bg); border: 1px solid #fbbf24;
+  border-radius: 10px; padding: 1rem; margin-bottom: 1rem;
+  font-size: 14px; color: var(--amber); font-weight: 600;
+}
+
+/* HISTORY */
+.history-item { padding: 1rem 0; border-bottom: 1px solid var(--border); }
+.history-item:last-child { border-bottom: none; }
+.history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.history-date { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.history-xp { font-family: var(--mono); font-size: 12px; font-weight: 500; }
+.history-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+.tag { font-family: var(--mono); font-size: 9px; letter-spacing: 1px; padding: 2px 8px; border-radius: 100px; background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.tag.done { background: var(--surface2); color: var(--text); border-color: var(--border); }
+.history-note { font-size: 13px; color: var(--muted); }
+
+/* LEVELS */
+.levels-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+@media (min-width: 600px) { .levels-grid { grid-template-columns: repeat(3, 1fr); } }
+.level-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; }
+.level-icon { font-size: 22px; margin-bottom: 8px; }
+.level-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.level-num { font-family: var(--serif); font-size: 32px; line-height: 1; margin-bottom: 8px; }
+.level-bar-wrap { background: var(--surface2); border-radius: 100px; height: 4px; overflow: hidden; margin-bottom: 6px; }
+.level-bar { height: 100%; border-radius: 100px; background: var(--text); transition: width 0.6s; }
+.level-sub { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+
+.rank-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.rank-row:last-child { border-bottom: none; }
+.rank-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+.rank-dot.unlocked { background: var(--text); }
+.rank-info { flex: 1; }
+.rank-row-name { font-size: 14px; font-weight: 500; }
+.rank-row-name.locked { color: var(--muted); }
+.rank-row-title { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+.rank-xp { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.rank-status { font-family: var(--mono); font-size: 10px; }
+.rank-status.unlocked { color: var(--green); }
+
+.divider { height: 1px; background: var(--border); margin: 1.5rem 0; }
+.page-title { font-family: var(--serif); font-size: 28px; margin-bottom: 1.25rem; }
+.page-title em { font-style: italic; }
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-screen">
+  <div class="auth-wrap">
+    <div class="auth-eyebrow">Personal OS</div>
+    <div class="auth-title">Level <em>Up</em></div>
+    <div class="auth-sub">Your daily training system.</div>
+    <div class="auth-err" id="auth-err"></div>
+    <input class="auth-input" id="pw-input" type="password" placeholder="access code" autocomplete="current-password">
+    <button class="auth-btn" id="auth-btn" onclick="handleAuth()">Enter</button>
+    <div class="auth-hint" id="auth-hint">Stored locally on this device. Works offline.</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <nav class="nav">
+    <div class="nav-logo">Level <em>Up</em></div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showPage('dashboard',this)">Dashboard</button>
+      <button class="nav-tab" onclick="showPage('schedule',this)">Schedule</button>
+      <button class="nav-tab" onclick="showPage('workout',this)">Workout</button>
+      <button class="nav-tab" onclick="showPage('log',this)">Log</button>
+      <button class="nav-tab" onclick="showPage('history',this)">History</button>
+      <button class="nav-tab" onclick="showPage('levels',this)">Levels</button>
+    </div>
+    <div class="nav-right">
+      <button class="lock-btn" onclick="logout()">Lock</button>
+    </div>
+  </nav>
+
+  <!-- MOBILE NAV -->
+  <nav class="mobile-nav">
+    <div class="mobile-tabs">
+      <button class="mobile-tab active" onclick="showPage('dashboard',this)"><span class="mobile-tab-icon">◉</span>Home</button>
+      <button class="mobile-tab" onclick="showPage('workout',this)"><span class="mobile-tab-icon">▲</span>Workout</button>
+      <button class="mobile-tab" onclick="showPage('log',this)"><span class="mobile-tab-icon">+</span>Log</button>
+      <button class="mobile-tab" onclick="showPage('history',this)"><span class="mobile-tab-icon">≡</span>History</button>
+      <button class="mobile-tab" onclick="showPage('levels',this)"><span class="mobile-tab-icon">◈</span>Levels</button>
+    </div>
+  </nav>
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="dash-top">
+      <div class="card">
+        <div class="card-label">Rank</div>
+        <div class="rank-name" id="d-rank-name">Beginner</div>
+        <div class="rank-title" id="d-rank-title">STARTING OUT</div>
+        <div class="xp-bar-wrap"><div class="xp-bar" id="d-xp-bar" style="width:0%"></div></div>
+        <div class="xp-label"><span id="d-xp-cur">0 XP</span><span id="d-xp-next">500 to next</span></div>
+      </div>
+      <div class="card">
+        <div class="card-label">Streak</div>
+        <div class="stat-big"><em id="d-streak">0</em></div>
+        <div class="stat-sub">days logged in a row</div>
+        <div style="margin-top:1rem;">
+          <div class="card-label" style="margin-bottom:6px;">Weekly Focus</div>
+          <div class="focus-pills" id="focus-pills"></div>
+        </div>
+      </div>
+    </div>
+    <div class="dash-bottom">
+      <div class="card">
+        <div class="card-label">Skill Levels</div>
+        <div id="d-skill-bars"></div>
+      </div>
+      <div class="card">
+        <div class="card-label">Today</div>
+        <div id="d-missions"></div>
+        <div style="margin-top:10px;font-family:var(--mono);font-size:10px;color:var(--muted);" id="d-today-xp">Log your day →</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCHEDULE -->
+  <div class="page" id="page-schedule">
+    <div class="page-title">Schedule</div>
+    <div class="schedule-grid">
+      <div>
+        <div class="schedule-label">Weekday — Mon to Fri</div>
+        <div id="weekday-schedule"></div>
+      </div>
+      <div>
+        <div class="schedule-label">Weekend — Sat & Sun</div>
+        <div id="weekend-schedule"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WORKOUT -->
+  <div class="page" id="page-workout">
+    <div class="page-title">Workout <em>Plan</em></div>
+    <div class="card" style="margin-bottom:1rem;">
+      <div class="card-label">How progression works</div>
+      <div style="font-size:13px;line-height:1.7;color:var(--muted);">
+        Each day has phases. <strong style="color:var(--text);">You only see the next phase when you've earned it</strong> by hitting the rep threshold over multiple sessions. Log your reps after every workout — the system tracks your best and unlocks the next phase automatically.
+      </div>
+    </div>
+    <div id="workout-days"></div>
+  </div>
+
+  <!-- LOG -->
+  <div class="page" id="page-log">
+    <div class="page-title">Daily <em>Log</em></div>
+    <div class="level-up-banner" id="lvlup-banner"></div>
+    <div class="success-banner" id="success-banner"></div>
+
+    <div class="card log-section">
+      <div class="log-section-title">Date & Energy</div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label class="form-label">Date</label>
+          <input class="form-input" type="date" id="log-date">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Energy</label>
+          <select class="form-select" id="log-energy">
+            <option value="1">😴 Exhausted</option>
+            <option value="2">😐 Low</option>
+            <option value="3" selected>😊 Normal</option>
+            <option value="4">⚡ Energized</option>
+            <option value="5">🔥 On Fire</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card log-section">
+      <div class="log-section-title">Completed Today</div>
+      <div class="check-grid">
+        <label class="check-label"><input type="checkbox" id="did-workout"><div class="check-box">✓</div> Workout</label>
+        <label class="check-label"><input type="checkbox" id="did-meals"><div class="check-box">✓</div> 3 Meals</label>
+        <label class="check-label"><input type="checkbox" id="did-study"><div class="check-box">✓</div> Studied</label>
+        <label class="check-label"><input type="checkbox" id="did-trade"><div class="check-box">✓</div> Trading</label>
+        <label class="check-label"><input type="checkbox" id="did-project"><div class="check-box">✓</div> Project</label>
+        <label class="check-label"><input type="checkbox" id="did-water"><div class="check-box">✓</div> 2L Water</label>
+        <label class="check-label"><input type="checkbox" id="did-sleep"><div class="check-box">✓</div> 7h Sleep</label>
+        <label class="check-label"><input type="checkbox" id="did-clean"><div class="check-box">✓</div> Clean Diet</label>
+      </div>
+    </div>
+
+    <div class="card log-section">
+      <div class="log-section-title">Workout Details</div>
+      <div class="workout-log-fields">
+        <div class="form-field">
+          <label class="form-label">Day Type</label>
+          <select class="form-select" id="log-day-type">
+            <option value="">— rest day —</option>
+            <option value="push">Day A — Push</option>
+            <option value="pull">Day B — Pull</option>
+            <option value="legs">Day C — Core + Legs</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Reps logged (best set per exercise)</label>
+          <div class="reps-group">
+            <div class="reps-item"><label>Exercise 1</label><input class="reps-input" type="number" id="r1" min="0" placeholder="0"></div>
+            <div class="reps-item"><label>Exercise 2</label><input class="reps-input" type="number" id="r2" min="0" placeholder="0"></div>
+            <div class="reps-item"><label>Exercise 3</label><input class="reps-input" type="number" id="r3" min="0" placeholder="0"></div>
+          </div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:6px;" id="rep-hint">Select a day type to see which exercises to log.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card log-section">
+      <div class="log-section-title">Reflection</div>
+      <div class="form-field">
+        <label class="form-label">What did you accomplish?</label>
+        <textarea class="form-textarea" id="log-win" placeholder="Finished problem set, hit a new pullup PR..."></textarea>
+      </div>
+      <div class="form-field">
+        <label class="form-label">What will you improve tomorrow?</label>
+        <textarea class="form-textarea" id="log-improve" placeholder="Sleep earlier, don't skip breakfast..."></textarea>
+      </div>
+    </div>
+
+    <button class="submit-btn" onclick="submitLog()">Submit Log</button>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="page" id="page-history">
+    <div class="page-title">History</div>
+    <div class="card" id="history-list">
+      <div style="text-align:center;padding:2rem;font-family:var(--mono);font-size:12px;color:var(--muted);">No logs yet.</div>
+    </div>
+  </div>
+
+  <!-- LEVELS -->
+  <div class="page" id="page-levels">
+    <div class="page-title">Levels</div>
+    <div class="levels-grid" id="levels-grid"></div>
+    <div class="divider"></div>
+    <div class="page-title" style="font-size:22px;">Ranks</div>
+    <div class="card" id="rank-list"></div>
+  </div>
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────────
+const RANKS = [
+  {name:'Beginner',  title:'STARTING OUT',     xp:0,     next:500},
+  {name:'Consistent',title:'BUILDING HABITS',  xp:500,   next:1500},
+  {name:'Disciplined',title:'LOCKED IN',       xp:1500,  next:3000},
+  {name:'Athlete',   title:'PHYSICALLY ELITE', xp:3000,  next:6000},
+  {name:'Scholar',   title:'ACADEMIC EDGE',    xp:6000,  next:10000},
+  {name:'Builder',   title:'CREATING THINGS',  xp:10000, next:15000},
+  {name:'Elite',     title:'TOP 1%',           xp:15000, next:25000},
+  {name:'Legend',    title:'MISSION COMPLETE', xp:25000, next:null},
+];
+
+const SKILLS = [
+  {key:'fitness',   name:'Fitness',   icon:'💪'},
+  {key:'study',     name:'Academics', icon:'📚'},
+  {key:'nutrition', name:'Nutrition', icon:'🥗'},
+  {key:'trading',   name:'Trading',   icon:'📈'},
+  {key:'project',   name:'Projects',  icon:'⚙️'},
+];
+
+// Calisthenics phases per day
+// unlock_key: what metric in state.bests to check, unlock_val: threshold to unlock
+const WORKOUT_DAYS = {
+  push: {
+    name: 'Day A — Push',
+    focus: 'Chest · Shoulders · Triceps',
+    key: 'push_main', // tracks incline→regular→weighted pushup reps
+    phases: [
+      {
+        name: 'Phase 1',
+        subtitle: 'Foundation',
+        unlock_val: 0, // always unlocked
+        unlock_desc: 'Starting point',
+        exercises: [
+          {name:'Incline Pushups',     sets:'3 × 12–15'},
+          {name:'Knee Dips',           sets:'3 × 8–10'},
+          {name:'Pike Pushups',        sets:'3 × 8'},
+          {name:'Diamond Pushups',     sets:'3 × 6'},
+          {name:'Wall Handstand Hold', sets:'3 × 20s'},
+        ]
+      },
+      {
+        name: 'Phase 2',
+        subtitle: 'Strength Base',
+        unlock_val: 15,
+        unlock_desc: 'Unlock: log 15+ incline pushups (best set)',
+        exercises: [
+          {name:'Full Pushups',        sets:'3 × 12–20'},
+          {name:'Dips',                sets:'3 × 8–12'},
+          {name:'Pike Pushups',        sets:'3 × 10–12'},
+          {name:'Archer Pushups',      sets:'3 × 5/side'},
+          {name:'Decline Pushups',     sets:'3 × 12'},
+        ]
+      },
+      {
+        name: 'Phase 3',
+        subtitle: 'Advanced',
+        unlock_val: 20,
+        unlock_desc: 'Unlock: log 20+ full pushups (best set)',
+        exercises: [
+          {name:'Pseudo Planche Pushups', sets:'3 × 8'},
+          {name:'Weighted Dips',          sets:'3 × 10–12'},
+          {name:'Pike Pushup Negatives',  sets:'3 × 6'},
+          {name:'Ring Dips',              sets:'3 × 8'},
+          {name:'Handstand Practice',     sets:'3 × 30s'},
+        ]
+      },
+      {
+        name: 'Phase 4',
+        subtitle: 'Elite',
+        unlock_val: 10,
+        unlock_desc: 'Unlock: log 10+ pseudo planche pushups (best set)',
+        exercises: [
+          {name:'Planche Leans',           sets:'4 × 15s'},
+          {name:'Handstand Pushup Neg.',   sets:'3 × 5'},
+          {name:'One-Arm Pushup Prog.',    sets:'3 × 5/side'},
+          {name:'Weighted Ring Dips',      sets:'3 × 8'},
+          {name:'HSPU Progression',        sets:'3 × 3–5'},
+        ]
+      },
+    ]
+  },
+  pull: {
+    name: 'Day B — Pull',
+    focus: 'Back · Biceps · Rear Delts',
+    key: 'pull_main',
+    phases: [
+      {
+        name: 'Phase 1',
+        subtitle: 'Foundation',
+        unlock_val: 0,
+        unlock_desc: 'Starting point',
+        exercises: [
+          {name:'Dead Hangs',         sets:'3 × 20–30s'},
+          {name:'Negative Pullups',   sets:'3 × 5 (slow)'},
+          {name:'Australian Rows',    sets:'3 × 10–12'},
+          {name:'Scapular Pullups',   sets:'3 × 10'},
+          {name:'DB Row',             sets:'3 × 10/side'},
+        ]
+      },
+      {
+        name: 'Phase 2',
+        subtitle: 'First Pullups',
+        unlock_val: 5,
+        unlock_desc: 'Unlock: log 5+ clean pullups (best set)',
+        exercises: [
+          {name:'Pullups',            sets:'3 × max'},
+          {name:'Chin-Ups',           sets:'3 × 8–10'},
+          {name:'Australian Rows',    sets:'3 × 15'},
+          {name:'Commando Pullups',   sets:'3 × 4/side'},
+          {name:'Scapular Pullups',   sets:'3 × 12'},
+        ]
+      },
+      {
+        name: 'Phase 3',
+        subtitle: 'Strength',
+        unlock_val: 10,
+        unlock_desc: 'Unlock: log 10+ pullups (best set)',
+        exercises: [
+          {name:'Weighted Pullups',   sets:'3 × 6–8'},
+          {name:'L-Sit Chin-Ups',     sets:'3 × 5'},
+          {name:'Archer Pullups',     sets:'3 × 4/side'},
+          {name:'Typewriter Pullups', sets:'3 × 4'},
+          {name:'Tuck FL Hold',       sets:'3 × 10s'},
+        ]
+      },
+      {
+        name: 'Phase 4',
+        subtitle: 'Elite',
+        unlock_val: 15,
+        unlock_desc: 'Unlock: log 15+ pullups (best set)',
+        exercises: [
+          {name:'One-Arm Pullup Prog.', sets:'4 × 4/side'},
+          {name:'Front Lever Prog.',    sets:'4 × 10s'},
+          {name:'Muscle-Up Prog.',      sets:'3 × 5'},
+          {name:'Weighted Pullups',     sets:'3 × 8 heavy'},
+          {name:'Ring Row L-Sit',       sets:'3 × 8'},
+        ]
+      },
+    ]
+  },
+  legs: {
+    name: 'Day C — Core + Legs',
+    focus: 'Core · Legs · Control',
+    key: 'legs_main',
+    phases: [
+      {
+        name: 'Phase 1',
+        subtitle: 'Foundation',
+        unlock_val: 0,
+        unlock_desc: 'Starting point',
+        exercises: [
+          {name:'Bodyweight Squats',  sets:'3 × 15'},
+          {name:'Glute Bridges',      sets:'3 × 15'},
+          {name:'Plank',              sets:'3 × 30s'},
+          {name:'Knee Raises',        sets:'3 × 12'},
+          {name:'Reverse Crunch',     sets:'3 × 12'},
+        ]
+      },
+      {
+        name: 'Phase 2',
+        subtitle: 'Building',
+        unlock_val: 30,
+        unlock_desc: 'Unlock: log 30s+ plank hold',
+        exercises: [
+          {name:'Bulgarian Split Squat', sets:'3 × 10/side'},
+          {name:'Straight Leg Raises',   sets:'3 × 12'},
+          {name:'Plank',                 sets:'3 × 60s'},
+          {name:'Pistol Squat Assist',   sets:'3 × 6/side'},
+          {name:'L-Sit Progression',     sets:'3 × 8–10s'},
+        ]
+      },
+      {
+        name: 'Phase 3',
+        subtitle: 'Intermediate',
+        unlock_val: 60,
+        unlock_desc: 'Unlock: log 60s plank + 6 pistol squats',
+        exercises: [
+          {name:'Pistol Squats',         sets:'3 × 8/side'},
+          {name:'Hanging Leg Raises',    sets:'3 × 12'},
+          {name:'L-Sit Hold',            sets:'3 × 15s'},
+          {name:'Dragon Flag Neg.',      sets:'3 × 5'},
+          {name:'Shrimp Squat Prog.',    sets:'3 × 5/side'},
+        ]
+      },
+      {
+        name: 'Phase 4',
+        subtitle: 'Elite',
+        unlock_val: 8,
+        unlock_desc: 'Unlock: log 8+ pistol squats each side',
+        exercises: [
+          {name:'Dragon Flags',          sets:'3 × 8'},
+          {name:'Weighted Pistol Squats',sets:'3 × 6/side'},
+          {name:'L-Sit to V-Sit',        sets:'3 × 4'},
+          {name:'Human Flag Prog.',      sets:'3 × 10s'},
+          {name:'Manna Progression',     sets:'3 × 8s'},
+        ]
+      },
+    ]
+  }
+};
+
+const REP_HINTS = {
+  push: ['Incline pushups (best set)', 'Full pushups (best set)', 'Key exercise (best set)'],
+  pull: ['Pullups or negatives (best set)', 'Chin-ups (best set)', 'Rows (best set)'],
+  legs: ['Plank hold (seconds)', 'Squats or pistol (reps)', 'Leg raises (reps)'],
+};
+
+const WEEKDAY = [
+  ['5:30 AM',   'Wake + High-Protein Breakfast',  'Eggs, oats, fruit — eat before training'],
+  ['6:00–7:00', 'Workout',                         'Follow the workout plan (Day A / B / C)'],
+  ['7:15 AM',   'Post-Workout Meal',               'Protein + carbs — non-negotiable'],
+  ['8:00–4:00', 'Lectures',                        'MIT — take notes, stay present'],
+  ['12:30 PM',  'Lunch',                           'Meal prep — don\'t skip this'],
+  ['4:15–4:45', 'Market Check & Trading',          'Review positions, execute strategy'],
+  ['5:00–6:30', 'Study / Project Work',            '1–2 hrs of focused deep work'],
+  ['7:00 PM',   'Dinner',                          'Protein + vegetables + complex carbs'],
+  ['8:00–9:30', 'Personal Projects',               'Build, code, research'],
+  ['10:00 PM',  'Wind Down + Log',                 'Fill log, prep tomorrow, sleep by 11'],
+];
+const WEEKEND = [
+  ['7:00 AM',   'Wake + Big Breakfast',            'Cook something real'],
+  ['8:00–9:30', 'Long Workout',                    'Longer session, heavier focus'],
+  ['10:30–12:30','Deep Study Block',               'Review week, prep for next'],
+  ['12:30 PM',  'Lunch',                           'Real food'],
+  ['2:00–3:00', 'Trading Research',                'Journal, strategy, review'],
+  ['3:30–6:00', 'Project Sprint',                  'Extended build session'],
+  ['6:30 PM',   'Dinner',                          'Cook — don\'t order out'],
+  ['8:00 PM',   'Recovery',                        'Rest fully — you earned it'],
+  ['10:00 PM',  'Weekly Review + Log',             'Rate the week, set next focus'],
+];
+
+// ─── STORAGE ────────────────────────────────────────────────────────────────
+const sha256 = async (msg) => {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+};
+const getState = () => {
+  try { return JSON.parse(localStorage.getItem('lu_state')) || defaultState(); } catch { return defaultState(); }
+};
+const saveState = s => localStorage.setItem('lu_state', JSON.stringify(s));
+const getConfig = () => { try { return JSON.parse(localStorage.getItem('lu_cfg')) || {}; } catch { return {}; } };
+const saveConfig = c => localStorage.setItem('lu_cfg', JSON.stringify(c));
+
+function defaultState() {
+  return {
+    xp: 0, streak: 0, last_log: '',
+    week_focus: 'fitness',
+    skill_levels: Object.fromEntries(SKILLS.map(s=>[s.key,1])),
+    skill_xp: Object.fromEntries(SKILLS.map(s=>[s.key,0])),
+    bests: { push_main: 0, pull_main: 0, legs_main: 0 },
+    push_phase: 0, pull_phase: 0, legs_phase: 0,
+    logs: []
+  };
+}
+
+// ─── AUTH ────────────────────────────────────────────────────────────────────
+async function handleAuth() {
+  const val = document.getElementById('pw-input').value.trim();
+  const err = document.getElementById('auth-err');
+  if (!val) { err.textContent = 'Enter your code.'; return; }
+  const cfg = getConfig();
+  if (!cfg.pw) {
+    if (val.length < 4) { err.textContent = 'Minimum 4 characters.'; return; }
+    const hash = await sha256(val);
+    saveConfig({...cfg, pw: hash});
+    launchApp();
+  } else {
+    const hash = await sha256(val);
+    if (hash === cfg.pw) { launchApp(); }
+    else { err.textContent = 'Incorrect code.'; document.getElementById('pw-input').value = ''; }
+  }
+}
+document.getElementById('pw-input').addEventListener('keydown', e => { if (e.key === 'Enter') handleAuth(); });
+
+function launchApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  const cfg = getConfig();
+  if (!cfg.pw) {
+    document.getElementById('auth-btn').textContent = 'Create Code';
+    document.getElementById('auth-hint').textContent = 'First time — set a code only you know.';
+  }
+  initApp();
+}
+
+function logout() {
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('pw-input').value = '';
+  document.getElementById('auth-err').textContent = '';
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+function initApp() {
+  const cfg = getConfig();
+  if (!cfg.pw) {
+    document.getElementById('auth-btn').textContent = 'Create Code';
+    document.getElementById('auth-hint').textContent = 'First time setup. Choose a code only you know.';
+  }
+  setLogDate();
+  renderDashboard();
+  renderSchedule();
+  renderWorkout();
+  renderHistory();
+  renderLevels();
+  setupFocusPills();
+  setupRepHints();
+}
+
+function setLogDate() {
+  document.getElementById('log-date').value = new Date().toISOString().split('T')[0];
+}
+
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab, .mobile-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll(`[onclick*="'${name}'"]`).forEach(el => el.classList.add('active'));
+}
+
+// ─── RANK & XP ───────────────────────────────────────────────────────────────
+function getRank(xp) {
+  let r = RANKS[0];
+  for (const rank of RANKS) { if (xp >= rank.xp) r = rank; }
+  return r;
+}
+
+function xpBar(cur, rank) {
+  if (!rank.next) return 100;
+  return Math.min(100, ((cur - rank.xp) / (rank.next - rank.xp)) * 100);
+}
+
+// ─── PHASE UNLOCK LOGIC ─────────────────────────────────────────────────────
+function getUnlockedPhase(dayKey, state) {
+  const day = WORKOUT_DAYS[dayKey];
+  const best = state.bests[day.key] || 0;
+  let unlocked = 0;
+  for (let i = 0; i < day.phases.length; i++) {
+    if (best >= day.phases[i].unlock_val) unlocked = i;
+  }
+  return unlocked;
+}
+
+// ─── DASHBOARD ───────────────────────────────────────────────────────────────
+function renderDashboard() {
+  const s = getState();
+  const rank = getRank(s.xp);
+  document.getElementById('d-rank-name').textContent = rank.name;
+  document.getElementById('d-rank-title').textContent = rank.title;
+  document.getElementById('d-xp-bar').style.width = xpBar(s.xp, rank) + '%';
+  document.getElementById('d-xp-cur').textContent = s.xp + ' XP';
+  document.getElementById('d-xp-next').textContent = rank.next ? (rank.next - s.xp) + ' to next' : 'MAX';
+  document.getElementById('d-streak').textContent = s.streak;
+
+  // Skill bars
+  const sb = document.getElementById('d-skill-bars');
+  sb.innerHTML = SKILLS.map(sk => {
+    const lvl = s.skill_levels[sk.key] || 1;
+    const pct = ((lvl - 1) / 9) * 100;
+    return `<div class="skill-row"><div class="skill-icon">${sk.icon}</div><div class="skill-name">${sk.name}</div><div class="skill-bar-wrap"><div class="skill-bar" style="width:${pct}%"></div></div><div class="skill-lv">Lv ${lvl}</div></div>`;
+  }).join('');
+
+  // Today missions
+  const today = new Date().toISOString().split('T')[0];
+  const tl = s.logs.find(l => l.date === today);
+  const missions = [['workout','Workout'],['meals','3 Meals'],['study','Study'],['trade','Trading'],['project','Project']];
+  document.getElementById('d-missions').innerHTML = missions.map(([k,l]) => {
+    const done = tl && tl[k];
+    return `<div class="mission-item"><div class="mission-check ${done?'done':''}">${done?'✓':''}</div><span>${l}</span></div>`;
+  }).join('');
+  document.getElementById('d-today-xp').textContent = tl ? `Logged today  +${tl.xp} XP` : 'Log your day →';
+}
+
+function setupFocusPills() {
+  const s = getState();
+  const focuses = [['fitness','💪 Fitness'],['study','📚 Study'],['nutrition','🥗 Nutrition'],['trading','📈 Trading'],['project','⚙️ Projects']];
+  document.getElementById('focus-pills').innerHTML = focuses.map(([k,l]) =>
+    `<button class="focus-pill ${s.week_focus===k?'active':''}" onclick="setFocus('${k}',this)">${l}</button>`
+  ).join('');
+}
+
+function setFocus(key, el) {
+  document.querySelectorAll('.focus-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  const s = getState(); s.week_focus = key; saveState(s);
+}
+
+// ─── SCHEDULE ────────────────────────────────────────────────────────────────
+function renderSchedule() {
+  const render = (data, id) => {
+    document.getElementById(id).innerHTML = data.map(([t,n,s]) =>
+      `<div class="time-block"><div class="time-block-time">${t}</div><div class="time-block-body"><div class="time-block-name">${n}</div><div class="time-block-note">${s}</div></div></div>`
+    ).join('');
+  };
+  render(WEEKDAY, 'weekday-schedule');
+  render(WEEKEND, 'weekend-schedule');
+}
+
+// ─── WORKOUT ─────────────────────────────────────────────────────────────────
+function renderWorkout() {
+  const s = getState();
+  const container = document.getElementById('workout-days');
+  container.innerHTML = '';
+
+  for (const [dayKey, day] of Object.entries(WORKOUT_DAYS)) {
+    const unlockedPhase = getUnlockedPhase(dayKey, s);
+    const best = s.bests[day.key] || 0;
+
+    let html = `<div class="workout-day">
+      <div class="workout-day-header">
+        <div class="workout-day-name">${day.name}</div>
+        <div class="workout-day-focus">${day.focus}</div>
+      </div>`;
+
+    day.phases.forEach((phase, i) => {
+      const isLocked = i > unlockedPhase + 1;
+      const isCurrent = i === unlockedPhase;
+      const isDone = i < unlockedPhase;
+      const isNextUp = i === unlockedPhase + 1;
+
+      if (isLocked) return; // don't show phases beyond next
+
+      let badgeClass = isCurrent ? 'current' : (isDone ? 'done' : 'locked');
+      let badgeText = isCurrent ? 'CURRENT' : (isDone ? 'COMPLETED' : 'NEXT');
+
+      html += `<div class="phase-card ${isCurrent?'current':''} ${isNextUp&&!isCurrent?'':''}">
+        <div class="phase-header">
+          <div class="phase-name">${phase.name} — ${phase.subtitle}</div>
+          <div class="phase-badge ${badgeClass}">${badgeText}</div>
+        </div>`;
+
+      if (isNextUp) {
+        html += `<div class="phase-unlock">${phase.unlock_desc}  (your best: ${best})</div>`;
+      }
+
+      html += `<ul class="exercise-list">`;
+      phase.exercises.forEach(ex => {
+        html += `<li><span class="ex-name">${ex.name}</span><span class="ex-sets">${ex.sets}</span></li>`;
+      });
+      html += `</ul></div>`;
+    });
+
+    html += `</div>`;
+    container.innerHTML += html;
+  }
+}
+
+// ─── REP HINTS ───────────────────────────────────────────────────────────────
+function setupRepHints() {
+  document.getElementById('log-day-type').addEventListener('change', function() {
+    const val = this.value;
+    const hint = document.getElementById('rep-hint');
+    if (!val) { hint.textContent = 'Select a day type to see which exercises to log.'; return; }
+    const hints = REP_HINTS[val];
+    hint.innerHTML = `Ex 1: ${hints[0]}<br>Ex 2: ${hints[1]}<br>Ex 3: ${hints[2]}`;
+  });
+}
+
+// ─── LOG ─────────────────────────────────────────────────────────────────────
+function submitLog() {
+  const s = getState();
+  const logDate = document.getElementById('log-date').value;
+  if (!logDate) { alert('Please select a date.'); return; }
+
+  const workout = document.getElementById('did-workout').checked;
+  const meals   = document.getElementById('did-meals').checked;
+  const study   = document.getElementById('did-study').checked;
+  const trade   = document.getElementById('did-trade').checked;
+  const project = document.getElementById('did-project').checked;
+  const water   = document.getElementById('did-water').checked;
+  const sleep   = document.getElementById('did-sleep').checked;
+  const clean   = document.getElementById('did-clean').checked;
+  const energy  = parseInt(document.getElementById('log-energy').value);
+  const dayType = document.getElementById('log-day-type').value;
+  const r1 = parseInt(document.getElementById('r1').value) || 0;
+  const r2 = parseInt(document.getElementById('r2').value) || 0;
+  const r3 = parseInt(document.getElementById('r3').value) || 0;
+  const win     = document.getElementById('log-win').value;
+  const improve = document.getElementById('log-improve').value;
+
+  // XP
+  let xp = 50;
+  if (workout)  xp += 40;
+  if (meals)    xp += 20;
+  if (study)    xp += 30;
+  if (trade)    xp += 20;
+  if (project)  xp += 30;
+  if (water)    xp += 10;
+  if (sleep)    xp += 20;
+  if (clean)    xp += 10;
+  if (energy >= 4) xp += 10;
+
+  // Skill XP
+  if (workout) s.skill_xp.fitness   = (s.skill_xp.fitness||0)   + Math.round(xp*0.4);
+  if (study)   s.skill_xp.study     = (s.skill_xp.study||0)     + Math.round(xp*0.3);
+  if (meals||clean) s.skill_xp.nutrition = (s.skill_xp.nutrition||0) + Math.round(xp*0.2);
+  if (trade)   s.skill_xp.trading   = (s.skill_xp.trading||0)   + Math.round(xp*0.2);
+  if (project) s.skill_xp.project   = (s.skill_xp.project||0)   + Math.round(xp*0.3);
+
+  // Focus bonus
+  const focusMap = {fitness:'workout',study:'study',nutrition:'meals',trading:'trade',project:'project'};
+  const fk = s.week_focus;
+  const logEntry = {workout,meals,study,trade,project,water,sleep,clean};
+  if (logEntry[focusMap[fk]]) s.skill_xp[fk] = (s.skill_xp[fk]||0) + 50;
+
+  // Update bests and check phase unlocks
+  if (dayType === 'push' && r1 > 0) s.bests.push_main = Math.max(s.bests.push_main||0, r1);
+  if (dayType === 'pull' && r1 > 0) s.bests.pull_main = Math.max(s.bests.pull_main||0, r1);
+  if (dayType === 'legs' && r1 > 0) s.bests.legs_main = Math.max(s.bests.legs_main||0, r1);
+
+  // Level up skills
+  const lvlUps = [];
+  for (const sk of SKILLS) {
+    const k = sk.key;
+    const threshold = (s.skill_levels[k]||1) * 200;
+    if ((s.skill_xp[k]||0) >= threshold && (s.skill_levels[k]||1) < 10) {
+      s.skill_levels[k] = (s.skill_levels[k]||1) + 1;
+      s.skill_xp[k] = 0;
+      lvlUps.push(`${sk.icon} ${sk.name} → Level ${s.skill_levels[k]}`);
+    }
+  }
+
+  // Save log
+  s.logs = s.logs.filter(l => l.date !== logDate);
+  s.logs.unshift({date:logDate, energy, workout, meals, study, trade, project, water, sleep, clean, dayType, r1, r2, r3, win, improve, xp});
+  s.xp += xp;
+
+  // Streak
+  const today = new Date().toISOString().split('T')[0];
+  const yesterday = new Date(Date.now()-86400000).toISOString().split('T')[0];
+  if (logDate === today) {
+    if (s.last_log === yesterday) s.streak = (s.streak||0) + 1;
+    else if (s.last_log !== today) s.streak = 1;
+    s.last_log = today;
+  }
+  saveState(s);
+
+  // Show feedback
+  const sb = document.getElementById('success-banner');
+  sb.style.display = 'block';
+  sb.textContent = `✓ Logged! +${xp} XP  ·  ${s.streak} day streak  ·  Rank: ${getRank(s.xp).name}`;
+  if (lvlUps.length) {
+    const lb = document.getElementById('lvlup-banner');
+    lb.style.display = 'block';
+    lb.textContent = '⬆ Level up! ' + lvlUps.join('  ·  ');
+  }
+  setTimeout(() => { sb.style.display='none'; document.getElementById('lvlup-banner').style.display='none'; }, 5000);
+
+  renderDashboard();
+  renderWorkout();
+  renderHistory();
+  renderLevels();
+}
+
+// ─── HISTORY ─────────────────────────────────────────────────────────────────
+function renderHistory() {
+  const s = getState();
+  const container = document.getElementById('history-list');
+  if (!s.logs.length) {
+    container.innerHTML = '<div style="text-align:center;padding:2rem;font-family:var(--mono);font-size:12px;color:var(--muted);">No logs yet.</div>';
+    return;
+  }
+  container.innerHTML = s.logs.slice(0,30).map(l => {
+    const tags = [
+      l.workout && 'Workout', l.study && 'Study', l.meals && 'Meals',
+      l.trade && 'Trading', l.project && 'Project'
+    ].filter(Boolean);
+    return `<div class="history-item">
+      <div class="history-header">
+        <div class="history-date">${l.date}</div>
+        <div class="history-xp">+${l.xp} XP</div>
+      </div>
+      <div class="history-tags">${tags.map(t=>`<span class="tag done">${t}</span>`).join('')}</div>
+      ${l.win ? `<div class="history-note">${l.win}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ─── LEVELS ──────────────────────────────────────────────────────────────────
+function renderLevels() {
+  const s = getState();
+  document.getElementById('levels-grid').innerHTML = SKILLS.map(sk => {
+    const lvl = s.skill_levels[sk.key] || 1;
+    const sxp = s.skill_xp[sk.key] || 0;
+    const needed = lvl * 200;
+    const pct = (sxp / needed) * 100;
+    return `<div class="level-card">
+      <div class="level-icon">${sk.icon}</div>
+      <div class="level-name">${sk.name}</div>
+      <div class="level-num">${lvl}</div>
+      <div class="level-bar-wrap"><div class="level-bar" style="width:${pct}%"></div></div>
+      <div class="level-sub">${sxp} / ${needed} XP to next</div>
+    </div>`;
+  }).join('');
+
+  const xp = s.xp;
+  document.getElementById('rank-list').innerHTML = RANKS.map(r => {
+    const unlocked = xp >= r.xp;
+    return `<div class="rank-row">
+      <div class="rank-dot ${unlocked?'unlocked':''}"></div>
+      <div class="rank-info">
+        <div class="rank-row-name ${unlocked?'':'locked'}">${r.name}</div>
+        <div class="rank-row-title">${r.title}</div>
+      </div>
+      <div class="rank-xp">${r.xp} XP</div>
+      <div class="rank-status ${unlocked?'unlocked':''}">${unlocked?'✓':''}</div>
+    </div>`;
+  }).join('');
+}
+
+// First launch check
+window.addEventListener('load', () => {
+  const cfg = getConfig();
+  if (!cfg.pw) {
+    document.getElementById('auth-btn').textContent = 'Create Access Code';
+    document.getElementById('auth-hint').textContent = 'First time — set a code only you know. Stored on this device.';
+  }
+});
+</script>
+</body>
+</html>
